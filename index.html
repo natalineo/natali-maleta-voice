@@ -427,11 +427,16 @@
       <p data-en>Stories, dubbing, ads, social — tell me what you have in mind.</p>
     </div>
 
-    <form id="bookingForm">
+    <form id="bookingForm" name="booking" method="POST" data-netlify="true" netlify="true" netlify-honeypot="bot-field">
+      <input type="hidden" name="form-name" value="booking">
+      <p style="display:none">
+        <label>Don't fill this out: <input name="bot-field"></label>
+      </p>
+
       <div class="field">
         <label data-es>Tu nombre</label>
         <label data-en>Your name</label>
-        <input type="text" id="name" required placeholder="—">
+        <input type="text" id="name" name="name" required placeholder="—">
       </div>
 
       <div class="field">
@@ -456,13 +461,13 @@
       <div class="field">
         <label data-es>Tu usuario o número de contacto</label>
         <label data-en>Your username or contact number</label>
-        <input type="text" id="contact_value" required placeholder="@usuario / +34...">
+        <input type="text" id="contact_value" name="contact_value" required placeholder="@usuario / +34...">
       </div>
 
       <div class="field">
         <label data-es>Cuéntame sobre tu proyecto</label>
         <label data-en>Tell me about your project</label>
-        <textarea id="message" rows="4" placeholder="—"></textarea>
+        <textarea id="message" name="message" rows="4" placeholder="—"></textarea>
       </div>
 
       <button type="submit" class="btn btn-primary submit-btn">
@@ -470,15 +475,34 @@
         <span data-en>Send request</span>
       </button>
 
-      <p class="form-note" data-es>Al enviar, se abrirá tu app de correo con los datos completados — solo tienes que darle a enviar.</p>
-      <p class="form-note" data-en>Submitting opens your email app with the details filled in — just hit send.</p>
+      <p class="form-note" data-es>Te responderé pronto a través del contacto que indiques.</p>
+      <p class="form-note" data-en>I'll get back to you soon through the contact you provide.</p>
     </form>
+
+    <div id="formSuccess" style="display:none; max-width:540px; margin:0 auto; background:white; border-radius:20px; padding:40px; text-align:center; border:1px solid rgba(47,79,73,0.1); box-shadow: 0 24px 50px -32px rgba(47,79,73,0.3);">
+      <div style="font-size:2.4rem; margin-bottom:12px;">🦕</div>
+      <h3 style="color:var(--teal-deep); margin-bottom:8px;" data-es>¡Solicitud enviada!</h3>
+      <h3 style="color:var(--teal-deep); margin-bottom:8px;" data-en>Request sent!</h3>
+      <p style="color:var(--ink-soft);" data-es>Gracias por escribirme. Te contactaré muy pronto.</p>
+      <p style="color:var(--ink-soft);" data-en>Thanks for reaching out. I'll be in touch very soon.</p>
+    </div>
   </section>
 
   <footer>
     <p data-es>Hecho con cariño por Natali Maleta 🦕 © 2026</p>
     <p data-en>Made with care by Natali Maleta 🦕 © 2026</p>
   </footer>
+
+  <!-- Hidden static form so Netlify's build-time bot reliably detects it -->
+  <form name="booking" data-netlify="true" netlify="true" netlify-honeypot="bot-field" hidden>
+    <input type="text" name="name">
+    <input type="radio" name="contact_method" value="Telegram">
+    <input type="radio" name="contact_method" value="Instagram">
+    <input type="radio" name="contact_method" value="WhatsApp">
+    <input type="text" name="contact_value">
+    <textarea name="message"></textarea>
+    <input name="bot-field">
+  </form>
 
 <script>
   function setLang(lang){
@@ -495,25 +519,31 @@
     });
   });
 
-  document.getElementById('bookingForm').addEventListener('submit', function(e){
+  const bookingForm = document.getElementById('bookingForm');
+  bookingForm.addEventListener('submit', function(e){
     e.preventDefault();
-    const name = document.getElementById('name').value.trim();
-    const contactMethod = (document.querySelector('input[name="contact_method"]:checked') || {}).value || '—';
-    const contactValue = document.getElementById('contact_value').value.trim();
-    const message = document.getElementById('message').value.trim();
 
-    const isEN = document.body.classList.contains('lang-en');
-    const subject = isEN ? `Narration request from ${name}` : `Solicitud de narración de ${name}`;
-    const body =
-`${isEN ? 'Name' : 'Nombre'}: ${name}
-${isEN ? 'Preferred contact' : 'Contacto preferido'}: ${contactMethod}
-${isEN ? 'Contact details' : 'Datos de contacto'}: ${contactValue}
+    const submitBtn = bookingForm.querySelector('.submit-btn');
+    submitBtn.style.opacity = '0.6';
+    submitBtn.style.pointerEvents = 'none';
 
-${isEN ? 'Message' : 'Mensaje'}:
-${message}`;
+    const formData = new FormData(bookingForm);
 
-    const mailto = `mailto:the.librosparatodos@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(formData).toString()
+    })
+      .then(() => {
+        bookingForm.style.display = 'none';
+        document.getElementById('formSuccess').style.display = 'block';
+      })
+      .catch((error) => {
+        submitBtn.style.opacity = '1';
+        submitBtn.style.pointerEvents = 'auto';
+        alert('Error — please try again or contact me directly.');
+        console.error(error);
+      });
   });
 </script>
 
